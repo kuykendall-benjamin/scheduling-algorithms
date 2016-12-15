@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from random import choice
 from numpy import argmax
 from cvxpy import *
 from codecs import open as copen
@@ -50,6 +51,18 @@ def choose_speeds(n, E, J):
     #prob.solve(verbose=False,feastol=1e-08,solver=CVXOPT)
 
     return (prob.status, prob.value, S.value, R.value)
+
+# res is output of choose_speeds
+def tikz(J, res, fn):
+    _, _, S, R = res
+    m = len(J)
+    with open(fn, 'w') as f:
+        f.write("\\begin{tikzpicture}\n")
+        for mach_no in range(len(J)):
+            for j in J[mach_no]:
+                f.write("\draw (%f, %d) rectangle (%f, %d) node[pos=.5] {%d};\n"
+                        % (10*S[j], m-mach_no, 10*(S[j] + R[j]), m-mach_no+1, j))
+        f.write("\end{tikzpicture}\n")
 
 # tree
 class Node:
@@ -114,8 +127,16 @@ class Node:
             self.children.remove(n)
         return n
 
-    def pop_next_random(self): # w/o hueristic
-        return
+    def pop_rand(self):
+        if not self.children:
+            return self
+        pos = [c.length() for c in self.children]
+        inds = [i for i in range(len(pos)) if pos[i] == max(pos)]
+        n = self.children[choice(inds)].pop_next()
+        if n in self.children:
+            n.parent = self
+            self.children.remove(n)
+        return n
 
 # edge list => Node
 def from_edges(E, n=None):
@@ -146,13 +167,15 @@ def conllu_tree(fn):
                     print('bad line %d "%s"' % (i, line[:-1]))
     return [from_edges(s) for s in sentences]
 
-# hueristic schedule
-def schedule(m, T):
+def schedule(m, T, rand=False):
     n = T.size()
     E = T.get_edges()
     J = [[] for i in range(m)]
 
-    jobs = [T.pop_next() for i in range(n)]
+    if rand:
+        jobs = [T.pop_rand() for i in range(n)]
+    else:
+        jobs = [T.pop_next() for i in range(n)]
 
     while True:
         for j in jobs:
@@ -169,18 +192,29 @@ def schedule(m, T):
             print(j, end="\t")
             if j == T:
                 print()
-                return choose_speeds(n,E,J)
+                return (J, choose_speeds(n,E,J))
         print()
 
 
-tree = conllu_tree('smpl.conllu')[0]
-print(tree)
-print(schedule(3, tree))
+# tree = conllu_tree('smpl.conllu')[0]
+# print(tree)
+# J, S = schedule(3, tree)
+
+J, S = schedule(3, Node(0, [Node(1, [Node(2), Node(3)]),
+                            Node(4, [Node(5), Node(6)])]), False)
+print(J)
+
+print(S)
+tikz(J, S, "out.tikz")
 
 #print(schedule(2, Node(2, [Node(1, [Node(3), Node(4)]), Node(0)])))
 #print(schedule(2, Node(0, [Node(1, [Node(2), Node(3), Node(4)]), Node(5)])))
 
 #trees = conllu_tree('en-ud-train.conllu')
+#print("total: ", len(trees))
+#for i in range(len(trees)):
+#    schedule(3,trees[i])
+#    print(i)
 
 #n = 3;
 #T = Node(2, [Node(1), Node(0)])
