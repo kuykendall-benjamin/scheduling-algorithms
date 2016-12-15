@@ -167,10 +167,12 @@ def conllu_tree(fn):
                     print('bad line %d "%s"' % (i, line[:-1]))
     return [from_edges(s) for s in sentences]
 
-def schedule(m, T, rand=False):
+def schedule(m, T, rand=False, zz=False):
     n = T.size()
     E = T.get_edges()
     J = [[] for i in range(m)]
+
+    forwards = True
 
     if rand:
         jobs = [T.pop_rand() for i in range(n)]
@@ -178,9 +180,10 @@ def schedule(m, T, rand=False):
         jobs = [T.pop_next() for i in range(n)]
 
     while True:
+        forwards = forwards != zz
         for j in jobs:
             j.schedulable = True
-        for mach in J:
+        for mach in (J if forwards else reversed(J)):
             for j in jobs:
                 if j.schedulable:
                     break
@@ -201,7 +204,7 @@ def schedule(m, T, rand=False):
 # J, S = schedule(3, tree)
 
 J, S = schedule(3, Node(0, [Node(1, [Node(2), Node(3)]),
-                            Node(4, [Node(5), Node(6)])]), False)
+                            Node(4, [Node(5), Node(6)])]), zz=True)
 print(J)
 
 print(S)
