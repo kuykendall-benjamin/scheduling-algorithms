@@ -1,0 +1,113 @@
+
+* TODO
+
+** write introduction
+   motivation for energy []
+   motivation for prec []
+   notation
+
+** write chains proof
+
+** use chain decomposition, find bad approx ratio
+   cite [KMPS]
+   probably a bad approx ratio, power mean inequality
+   talk about trees & forests
+
+** show why P|tree|Cmax fails to scale
+   cite [Hu]
+
+** explain (heuristic, rand, zz)
+
+** experiment
+   impl
+   data set [cite]
+
+** data
+   github link
+
+** analysis
+
+* energy aware precedence scheduling
+  fix completion time, min energy
+
+  given an assignment of jobs to machines, we have a convex program that gives speeds
+
+** lower bounds for DAGs
+   ignore the precedence constraints: Cmp(n/Cm)
+   considering any i disjoint chains: Sum_i C p(k_i/C)
+
+** given assignment, convex program to choose order and speeds
+   variables s, r > 0 for each job
+   for constrained jobs: s + r <= s'
+   for pairs of jobs on a given machine: s + r <= s'
+   to achieve C for each job: s + r <= C
+   objective: min Sum r p(w/r)
+
+** disjoint chains w/ unit jobs
+   fewer chains than machines: run one chain on each machine
+   more: solve P|chains|Cmax (longest chain first) and scale each machine?
+   nope, could mess up precedence constraints
+
+   just keep a chain on same machine whenever possible.
+
+   alternatively, sort the chains by decr length, cycle in order
+   would fail when something like
+     ........
+     mi | a b
+     mj | b .
+     ........
+   but this cannot occur, as then there would be an a above the b.
+   then we would have a situation like this at the top of the list,
+   in which case, the b should be an a instead. could fail other ways?
+
+   works out, bcs a bunch of stacked chains, and then remaining machines
+   have lengths within 1 unit, use argument above
+
+   optimality: keeps num jobs per machine close
+
+** in trees w/ unit jobs
+   for in-trees, we would like that the classical algorithm gives an optimal assignment
+   but it may not, consider
+
+   a
+   |
+   b  c  d
+
+   for which {a} {c,b} {d} is correct in the alg, but suboptimal for energy
+
+   labeling scheme get the leftmost of your longest subtrees to do the same
+
+   this is a generalization of what we did for chains.
+
+   lemma: sub(tree/schedule) can stretch => schedule can stretch
+   bcs distance between nodes only increases (maybe...)
+
+   equivalently, line up with ancestor?
+
+** best case outline
+   motivate energy and precedence (cite energy papers)
+   lower bounds above, even if do not use
+   convex program gives speeds from machine assignment
+   correct algorithm for chains (special case of job scheduling)
+   hopefully correct algorithm for trees, special case of Cmax alg (cite Hu 61)
+   why this fails for DAGs, while Cmax is easy (cite) [hardness result would be great]
+
+* experiment?
+
+** sources
+   dependency grammar:
+   https://raw.githubusercontent.com/UniversalDependencies/UD_English/master/en-ud-train.conllu
+   http://universaldependencies.org/docs/format.html
+   lisp program:
+   https://github.com/sbcl/sbcl/tree/master/src
+
+** convex opt
+   http://www.cvxpy.org/en/latest/tutorial/intro/
+   really nice, but kind of ugly to do everything else in python
+
+** algs to impliment
+   tree varients:
+   heuristic tree alg (best case?)
+   tree alg with random choices (rand case)
+   tree alg with heurisic choices, machines backwards (worst case?)
+   approx alg, using chain scheduler
