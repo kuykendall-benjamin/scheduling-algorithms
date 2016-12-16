@@ -4,6 +4,7 @@ from random import choice
 from numpy import argmax
 from cvxpy import *
 from codecs import open as copen
+import pprint
 
 # evaluate convex program to choose speeds given machine assignment over jobs [1...n]
 # n integer number of jobs
@@ -55,16 +56,33 @@ def choose_speeds(n, E, J):
     return (prob.status, prob.value, S.value, R.value)
 
 # res is output of choose_speeds
-def tikz(J, res, fn):
-    _, _, S, R = res
-    m = len(J)
+def tikz(parsed, fn):
+    energy, num_mach, data = parsed
     with open(fn, 'w') as f:
+        f.write("Energy: %d\n" % energy)
         f.write("\\begin{tikzpicture}\n")
-        for mach_no in range(len(J)):
-            for j in J[mach_no]:
-                f.write("\draw (%f, %d) rectangle (%f, %d) node[pos=.5] {%d};\n"
-                        % (10*S[j], m-mach_no, 10*(S[j] + R[j]), m-mach_no+1, j))
+        for i, (m, s, r) in enumerate(data):
+            f.write("\draw (%f, %d) rectangle (%f, %d) node[pos=.5] {%d};\n"
+                    % (10*s, num_mach-m, 10*(s+r), num_mach-m+1, i))
         f.write("\end{tikzpicture}\n")
+
+# (energy, # mach, [(m, start, time), (m, start, time), (m, start, time), ...])
+def parse_schedule(J, res):
+    _, E, S, R = res
+    E = pow(E, -2)
+    nm = sum(len(i) for i in J)
+    M = [[0, 0, 0] for i in range(nm)]
+    for m, v in enumerate(J):
+        for j in v:
+            M[j][0] = m
+
+    for i in range(nm):
+        M[i][1] = S.item(i, 0)
+        M[i][2] = R.item(i, 0)
+
+    M = [(a[0], a[1], a[2]) for a in M]
+    return (E, len(J), M)
+
 
 # tree
 class Node:
@@ -194,26 +212,24 @@ def schedule(m, T, rand=False, zz=False):
             jobs.remove(j)
             j.schedule()
             mach.append(j.value())
-            print(j, end="\t")
+            # print(j, end="\t")
             if j == T:
-                print()
+                # print()
                 return (J, choose_speeds(n,E,J))
-        print()
+        # print()
 
 
-# tree = conllu_tree('smpl.conllu')[0]
-# print(tree)
-# J, S = schedule(3, tree)
+tree = conllu_tree('smpl.conllu')[0]
+print(tree)
+J, S = schedule(3, tree)
 
-J, S = schedule(3, Node(0, [Node(1, [Node(2), Node(3)]),
-                            Node(4, [Node(5), Node(6)])]), zz=True)
-print(J)
-
-print(S)
-tikz(J, S, "out.tikz")
-
-#print(schedule(2, Node(2, [Node(1, [Node(3), Node(4)]), Node(0)])))
-#print(schedule(2, Node(0, [Node(1, [Node(2), Node(3), Node(4)]), Node(5)])))
+#J, S = schedule(3, Node(0, [Node(1, [Node(2), Node(3)]),
+#                            Node(4, [Node(5), Node(6)])]), zz=True)
+pp = pprint.PrettyPrinter(indent=2)
+pp.pprint(J)
+parsed = parse_schedule(J, S)
+pp.pprint(parsed)
+tikz(parsed, "out.tikz")
 
 #trees = conllu_tree('en-ud-train.conllu')
 #print("total: ", len(trees))
