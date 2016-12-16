@@ -245,7 +245,7 @@ def schedule(m, T, rand=False, zz=False, optimize=True):
             mach.append(j.value())
             # print(j, end="\t")
             if j == T:
-                print()
+                # print()
                 if optimize: # todo: break into two methods
                     return (J, choose_speeds(n,E,J))
                 else:
@@ -341,10 +341,6 @@ def schedule_aa(m, blocks):
 #J, S = schedule(3, Node(0, [Node(1, [Node(2), Node(3)]),
 #                            Node(4, [Node(5), Node(6)])]), zz=True)
 pp = pprint.PrettyPrinter(indent=2)
-pp.pprint(J)
-parsed = parse_schedule(J, S)
-pp.pprint(parsed)
-tikz(parsed, "out.tikz")
 
 #trees = conllu_tree('en-ud-train.conllu')
 #print("total: ", len(trees))
