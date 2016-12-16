@@ -55,7 +55,6 @@ def choose_speeds(n, E, J):
 
     return (prob.status, pow(prob.value, -2), S.value, R.value)
 
-# res is output of choose_speeds
 def tikz(parsed, fn):
     energy, nmach, data = (parsed['energy'], parsed['num_mach'], parsed['data'])
     with open(fn, 'w') as f:
@@ -70,18 +69,22 @@ def tikz(parsed, fn):
 # (energy, # mach, [(m, start, time), (m, start, time), (m, start, time), ...])
 def parse_schedule(J, res):
     _, E, S, R = res
-    nm = sum(len(i) for i in J)
-    M = [{} for i in range(nm)]
+    nj = sum(len(i) for i in J)
+    M = [{} for i in range(nj)]
     for m, v in enumerate(J):
         for j in v:
             M[j]['machine'] = m
             M[j]['job'] = j
 
-    for i in range(nm):
-        M[i]['start'] = S.item(i, 0)
-        M[i]['flow'] = R.item(i, 0)
+    for i in range(nj):
+        try:
+            M[i]['start'] = S.item(i, 0)
+            M[i]['flow'] = R.item(i, 0)
+        except:
+            M[i]['start'] = S[i]
+            M[i]['flow'] = R[i]
 
-    return {'energy':round(E, 3), 'machines':len(J), 'data':M}
+    return {'energy':round(E, 3), 'machines':len(J), 'jobs': nj, 'data':M}
 
 
 # tree
@@ -256,7 +259,7 @@ def schedule(m, T, rand=False, zz=False, optimize=True):
 def schedule_aa(m, T):
     n = T.size()
     blocks = T.chain_decompose()
-    print(blocks)
+    # print(blocks)
 
     JS = []
     ID = []
@@ -298,12 +301,12 @@ def schedule_aa(m, T):
         J = JS[b]
         I = ID[b]
         c = len(J[0]) / total
-        print(c)
+        # print(c)
         for i in range(len(J)):
             if not J[i]:
                 continue
             inc = c / len(J[i])
-            print("  ", len(J[i]), " * ", inc)
+            # print("  ", len(J[i]), " * ", inc)
             for j in range(len(J[i])):
                 S[I[J[i][j]]] = off + inc*j
                 R[I[J[i][j]]] = inc
@@ -335,18 +338,13 @@ with open(name, "w") as f:
     for i, tree in enumerate(trees):
         if i%10 == 0:
             print("iteration %d/%d" % (i, len(trees)))
-        if i > 200:
-            break
 
         if not first:
             f.write(",\n")
         first = False
         s = tree.__str__()
-        J, res = schedule(3, tree, rand=True)
+        J, res = schedule_aa(3, tree)
         parsed = parse_schedule(J, res)
         parsed['tree'] = s;
-        del parsed['data']
-        del parsed['machines']
-        del parsed['tree']
         f.write(json.dumps(parsed, indent=2, sort_keys=True))
     f.write("\n]");
