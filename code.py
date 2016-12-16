@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 
-from random import choice
+from random import choice, shuffle
 from numpy import argmax
 from cvxpy import *
 from codecs import open as copen
-import pprint
+import pprint, json, sys
 
 # evaluate convex program to choose speeds given machine assignment over jobs [1...n]
 # n integer number of jobs
@@ -57,13 +57,14 @@ def choose_speeds(n, E, J):
 
 # res is output of choose_speeds
 def tikz(parsed, fn):
-    energy, num_mach, data = parsed
+    energy, nmach, data = (parsed['energy'], parsed['num_mach'], parsed['data'])
     with open(fn, 'w') as f:
         f.write("Energy: %d\n" % energy)
         f.write("\\begin{tikzpicture}\n")
-        for i, (m, s, r) in enumerate(data):
+        for i, m in enumerate(data):
             f.write("\draw (%f, %d) rectangle (%f, %d) node[pos=.5] {%d};\n"
-                    % (10*s, num_mach-m, 10*(s+r), num_mach-m+1, i))
+                    % (10*s, nmach-m['machine'], 10*(m['start']+m['flow']),
+                        nmach-m['machine']+1, i))
         f.write("\end{tikzpicture}\n")
 
 # (energy, # mach, [(m, start, time), (m, start, time), (m, start, time), ...])
@@ -71,17 +72,17 @@ def parse_schedule(J, res):
     _, E, S, R = res
     E = pow(E, -2)
     nm = sum(len(i) for i in J)
-    M = [[0, 0, 0] for i in range(nm)]
+    M = [{} for i in range(nm)]
     for m, v in enumerate(J):
         for j in v:
-            M[j][0] = m
+            M[j]['machine'] = m
+            M[j]['job'] = j
 
     for i in range(nm):
-        M[i][1] = S.item(i, 0)
-        M[i][2] = R.item(i, 0)
+        M[i]['start'] = S.item(i, 0)
+        M[i]['flow'] = R.item(i, 0)
 
-    M = [(a[0], a[1], a[2]) for a in M]
-    return (E, len(J), M)
+    return {'energy':round(E, 3), 'machines':len(J), 'data':M}
 
 
 # tree
@@ -249,7 +250,9 @@ def schedule(m, T, rand=False, zz=False, optimize=True):
                     return (J, choose_speeds(n,E,J))
                 else:
                     return (J, None)
-        print()
+        if rand:
+            shuffle(J)
+        # print()
 
 def schedule_aa(m, blocks):
     print(blocks)
@@ -357,3 +360,35 @@ tikz(parsed, "out.tikz")
 #blocks = (tree.chain_decompose())
 #for b in blocks:
 #    print(b)
+
+pp = pprint.PrettyPrinter(indent=2)
+#J, res = schedule(3, Node(0, [Node(1, [Node(2), Node(3)]),
+# Node(4, [Node(5), Node(6)])]), zz=True)
+
+name = "dump.json"
+try:
+    name = sys.argv[1]
+except:
+    pass
+trees = conllu_tree('en-ud-train.conllu')
+with open(name, "w") as f:
+    f.write("[\n");
+    first = True
+    for i, tree in enumerate(trees):
+        if i%10 == 0:
+            print("iteration %d/%d" % (i, len(trees)))
+        if i > 200:
+            break
+
+        if not first:
+            f.write(",\n")
+        first = False
+        s = tree.__str__()
+        J, res = schedule(3, tree, rand=True)
+        parsed = parse_schedule(J, res)
+        parsed['tree'] = s;
+        del parsed['data']
+        del parsed['machines']
+        del parsed['tree']
+        f.write(json.dumps(parsed, indent=2, sort_keys=True))
+    f.write("\n]");
