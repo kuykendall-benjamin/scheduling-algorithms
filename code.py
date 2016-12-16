@@ -314,52 +314,14 @@ def schedule_aa(m, blocks):
     return (J_ALL, ("ok", None, S, R))
 
 
+# some example trees
 
-#tree = conllu_tree('smpl.conllu')[0]
-#for b in tree.chain_decompose():
-#    print(b)
-# J, S = schedule_aa(3, tree.chain_decompose())
-# print(J)
-# print(S)
-# tikz(J, S, "out.tikz")
+# tree = conllu_tree('smpl.conllu')[0]
 
-#tree = Node(0, [Node(7, [Node(1, [Node(2), Node(3)])]),
+# tree = Node(0, [Node(7, [Node(1, [Node(2), Node(3)])]),
 #                Node(4, [Node(5), Node(6)])])
 
-# print(tree)
-# J, S = schedule(3, tree)
-#print(J)
-
-
-#tree = conllu_tree('smpl.conllu')[0]
-#print(tree)
-#J, S = schedule(3, tree)
-
-#print(S)
-#tikz(J, S, "out.tikz")
-
-#J, S = schedule(3, Node(0, [Node(1, [Node(2), Node(3)]),
-#                            Node(4, [Node(5), Node(6)])]), zz=True)
 pp = pprint.PrettyPrinter(indent=2)
-
-#trees = conllu_tree('en-ud-train.conllu')
-#print("total: ", len(trees))
-#for i in range(len(trees)):
-#    schedule(3,trees[i])
-#    print(i)
-
-#n = 3;
-#T = Node(2, [Node(1), Node(0)])
-#J = [[0,2], [1]]
-#print(choose_speeds(n, [T], J))
-
-#blocks = (tree.chain_decompose())
-#for b in blocks:
-#    print(b)
-
-pp = pprint.PrettyPrinter(indent=2)
-#J, res = schedule(3, Node(0, [Node(1, [Node(2), Node(3)]),
-# Node(4, [Node(5), Node(6)])]), zz=True)
 
 name = "dump.json"
 try:
