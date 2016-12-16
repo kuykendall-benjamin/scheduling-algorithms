@@ -15,40 +15,42 @@ def choose_speeds(n, E, J):
     constraints = []
 
     # non-negativity
-    print("NON-NEGATIVE")
+    # print("NON-NEGATIVE")
     for i in range(0,n):
         constraints.append(S[i] >= 0)
-        print("S[%d] >= 0" % i)
+        # print("S[%d] >= 0" % i)
         constraints.append(R[i] >= 0)
-        print("R[%d] >= 0" % i)
+        # print("R[%d] >= 0" % i)
 
     # makespan
-    print("MAKESPAN")
+    # print("MAKESPAN")
     for i in range(0,n):
         constraints.append(S[i] + R[i] <= 1)
-        print("S[%d] + R[%d] <= 1" % (i,i))
+        # print("S[%d] + R[%d] <= 1" % (i,i))
 
     # precedence
-    print("PRECEDENCE")
+    # print("PRECEDENCE")
     for i,j in E:
         constraints.append(S[i] + R[i] <= S[j])
-        print("S[%d] + R[%d] <= S[%d]" % (i,i,j))
+        # print("S[%d] + R[%d] <= S[%d]" % (i,i,j))
 
     # one job at a time
-    print("ONE AT A TIME")
+    # print("ONE AT A TIME")
     for A in J:
         for i in range(0, len(A)-1):
             constraints.append(S[A[i]] + R[A[i]] <= S[A[i+1]])
-            print("S[%d] + R[%d] <= S[%d]" % (A[i],A[i],A[i+1]))
+            # print("S[%d] + R[%d] <= S[%d]" % (A[i],A[i],A[i+1]))
 
     # objective, assuming cubic power
-    #obj = Minimize(power(pnorm(R, -2), -2))
+    # obj = Minimize(power(pnorm(R, -2), -2))
     obj = Maximize(pnorm(R, -2))
 
     # Form and solve problem.
     prob = Problem(obj, constraints)
-    prob.solve(verbose=True,feastol=1e-8)
-    #prob.solve(verbose=False,feastol=1e-08,solver=CVXOPT)
+    try:
+        prob.solve(verbose=False,feastol=1e-8)
+    except:
+        pass
 
     return (prob.status, prob.value, S.value, R.value)
 
