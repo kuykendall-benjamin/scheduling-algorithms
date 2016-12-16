@@ -53,7 +53,7 @@ def choose_speeds(n, E, J):
     except:
         pass
 
-    return (prob.status, prob.value, S.value, R.value)
+    return (prob.status, pow(prob.value, -2), S.value, R.value)
 
 # res is output of choose_speeds
 def tikz(parsed, fn):
@@ -70,7 +70,6 @@ def tikz(parsed, fn):
 # (energy, # mach, [(m, start, time), (m, start, time), (m, start, time), ...])
 def parse_schedule(J, res):
     _, E, S, R = res
-    E = pow(E, -2)
     nm = sum(len(i) for i in J)
     M = [{} for i in range(nm)]
     for m, v in enumerate(J):
@@ -310,8 +309,8 @@ def schedule_aa(m, blocks):
                 J_ALL[i].append(I[J[i][j]])
         off += c
 
-
-    return (J_ALL, ("ok", None, S, R))
+    E = sum(pow(r,-2) for r in R)
+    return (J_ALL, ("ok", E, S, R))
 
 
 # some example trees
