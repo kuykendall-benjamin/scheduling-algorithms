@@ -253,9 +253,10 @@ def schedule(m, T, rand=False, zz=False, optimize=True):
             shuffle(J)
         # print()
 
-def schedule_aa(m, blocks):
+def schedule_aa(m, T):
+    n = T.size()
+    blocks = T.chain_decompose()
     print(blocks)
-    n = sum(sum(len(l) for l in b) for b in blocks)
 
     JS = []
     ID = []
