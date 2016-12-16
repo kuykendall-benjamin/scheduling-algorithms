@@ -10,8 +10,6 @@ import pprint, json, sys
 # tree = Node(0, [Node(7, [Node(1, [Node(2), Node(3)])]),
 #                Node(4, [Node(5), Node(6)])])
 
-pp = pprint.PrettyPrinter(indent=2)
-
 name = "dump.json"
 try:
     name = sys.argv[1]
@@ -28,11 +26,13 @@ with open(name, "w") as f:
         if not first:
             f.write(",\n")
         first = False
+        height = tree.length()
         s = tree.__str__()
-        J, res = schedule_aa(3, tree)
+        J, res = schedule(3, tree, zz=True)
         parsed = parse_schedule(J, res)
-        parsed['tree'] = s;
-        del parsed['data']
-        del parsed['tree']
+        parsed['tree'] = s
+        parsed['height'] = height
+        # del parsed['data']
+        # del parsed['tree']
         f.write(json.dumps(parsed, indent=2, sort_keys=True))
     f.write("\n]");

@@ -54,17 +54,6 @@ def choose_speeds(n, E, J):
 
     return (prob.status, pow(prob.value, -2), S.value, R.value)
 
-def tikz(parsed, fn):
-    energy, nmach, data = (parsed['energy'], parsed['num_mach'], parsed['data'])
-    with open(fn, 'w') as f:
-        f.write("Energy: %d\n" % energy)
-        f.write("\\begin{tikzpicture}\n")
-        for i, m in enumerate(data):
-            f.write("\draw (%f, %d) rectangle (%f, %d) node[pos=.5] {%d};\n"
-                    % (10*s, nmach-m['machine'], 10*(m['start']+m['flow']),
-                        nmach-m['machine']+1, i))
-        f.write("\end{tikzpicture}\n")
-
 # (energy, # mach, [(m, start, time), (m, start, time), (m, start, time), ...])
 def parse_schedule(J, res):
     _, E, S, R = res
