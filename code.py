@@ -4,7 +4,6 @@ from random import choice, shuffle
 from numpy import argmax
 from cvxpy import *
 from codecs import open as copen
-import pprint, json, sys
 
 # evaluate convex program to choose speeds given machine assignment over jobs [1...n]
 # n integer number of jobs
@@ -317,34 +316,3 @@ def schedule_aa(m, T):
     return (J_ALL, ("ok", E, S, R))
 
 
-# some example trees
-
-# tree = conllu_tree('smpl.conllu')[0]
-
-# tree = Node(0, [Node(7, [Node(1, [Node(2), Node(3)])]),
-#                Node(4, [Node(5), Node(6)])])
-
-pp = pprint.PrettyPrinter(indent=2)
-
-name = "dump.json"
-try:
-    name = sys.argv[1]
-except:
-    pass
-trees = conllu_tree('en-ud-train.conllu')
-with open(name, "w") as f:
-    f.write("[\n");
-    first = True
-    for i, tree in enumerate(trees):
-        if i%10 == 0:
-            print("iteration %d/%d" % (i, len(trees)))
-
-        if not first:
-            f.write(",\n")
-        first = False
-        s = tree.__str__()
-        J, res = schedule_aa(3, tree)
-        parsed = parse_schedule(J, res)
-        parsed['tree'] = s;
-        f.write(json.dumps(parsed, indent=2, sort_keys=True))
-    f.write("\n]");
