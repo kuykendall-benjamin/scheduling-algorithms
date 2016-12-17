@@ -1,33 +1,33 @@
 
 * TODO
 
-** write introduction
+** write introduction BEN
    energy matters, but mostly deadline problems
    precedence matters, and P|prec|Cmax is easy, but some hard, exist hard DAG problems
 
-** write chains proof
+** write chains proof STEVEN
    explain exchange argument for 1 chain
    admit we couldn't get it to generalize or induct
    say we really wanted it to work
    draw pictures
 
-** tree heurstics
+** tree heurstics BOTH
    there are some free choices in classical cmax alg
    3 ways to make those decision -- cycling heuristic, rand, zz
    weirdly most decision don't matter -- only when width ~= m
    picture of numbering scheme
    output of interesting schedule both dirs
 
-** approx alg
+** approx alg BEN
    output of a schedule, label blocks and chains, find better schedule
    none of our test data really showed the assymptotics well
 
-** experiment
+** experiment BEN
    we implimented it, link github
    cite optimization library
    talk about data set, why natural trees
 
-** data and analysis
+** data and analysis STEVEN, then BOTH
    box and whisker comparing 3 heuristics or line graphs w/ err accross m?
    compare approx vs random, runtime and energy, reasons: bad at opt, simpler alg?
 
