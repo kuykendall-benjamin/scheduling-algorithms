@@ -77,9 +77,9 @@ def parse_schedule(J, res):
 
 # tree
 class Node:
-    def __init__(self, i, children=None):
+    def __init__(self, i, *children):
         self.i = i
-        self.children = children if children is not None else []
+        self.children = list(children) if len(children) > 0 else []
         self.schedulable = True
         self.parent = None
         self.chain_height = None
@@ -183,7 +183,7 @@ class Node:
 def from_edges(E, n=None):
     if not n: # assume tree
         n = len(E) + 1
-    nodes = [Node(i, []) for i in range(n)]
+    nodes = [Node(i) for i in range(n)]
     for i,j in E:
         nodes[j].add_child(nodes[i])
     return nodes[0]
@@ -263,7 +263,7 @@ def schedule_aa(m, T):
         for l in blocks[b]:
             prev = []
             for j in reversed(l):
-                prev = [Node(i, prev)]
+                prev = [Node(i, *prev)]
                 ids[i] = j
                 i = i + 1
             root.add_child(prev[0])
