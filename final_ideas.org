@@ -1,9 +1,4 @@
-
 * TODO
-
-** write introduction BEN
-   energy matters, but mostly deadline problems
-   precedence matters, and P|prec|Cmax is easy, but some hard, exist hard DAG problems
 
 ** tree heurstics BOTH
    there are some free choices in classical cmax alg
