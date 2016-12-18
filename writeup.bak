@@ -55,7 +55,7 @@
 \maketitle
 
 \begin{abstract}
-    Energy aware scheduling allows machines to run at varying speeds, but with a power use increasing with speed. Given this new measure, a schedule can optimize for some function of energy and a more traditional scheduling objective. We focus on minimizing energy use under a fixed makespan on identical machines. This is a trivial problem; however, it becomes less so when we add precedence constraints to the jobs. Precedence constraints can take the form of DAGs, but as an easier step, we consider only trees. We introduce an algorithm for chains and analyze it; we were hoping to prove optimality, but could not get a small piece of the proof. Building on our intuition about this partial result, we propose heuristics for scheduling trees under the same objectives. Using the tool of chain decompositions, along with the guarantees of the chain scheduling algorithm, we create an approximation algorithm for trees and carefully bound the approximation ratio. We simulate these algorithms and compare quantitative results suggesting which heuristic does best on realistic trees.
+    Energy aware scheduling allows machines to run at varying speeds, but with a power use increasing with speed. Given this new measure, a schedule can optimize for some function of energy and a more traditional scheduling objective. We focus on minimizing energy use under a fixed makespan on identical machines. This is a trivial problem; however, it becomes less so when we add precedence constraints to the jobs. Precedence constraints can take the form of DAGs, but as an easier step, we consider only trees. We introduce an algorithm for chains and analyze it; we were hoping to prove optimality, but could not get a small piece of the proof. Building on our intuition about this partial result, we propose heuristics for scheduling trees under the same objectives. Using the tool of chain decompositions, along with the guarantees of the chain scheduling algorithm, we create an approximation algorithm for trees and compute a bound for the approximation ratio. We simulate these algorithms and compare quantitative results suggesting which heuristic does best on realistic trees.
 \end{abstract}
 
 \section{Introduction}
@@ -64,7 +64,7 @@ The topics of energy and precedence were well motivated individually in class. E
 Precedence constraints model a variety of real life problems, like the order of steps in a project or industrial process, or the evaluation of an expression tree or functional program.
 The conjunction of the two is motivated by the combination of these concerns. It is easy to imagine a computation that must be aware of energy, speed, and order.
 
-In particular, we want to consider the problem $P|prec, C_{max} = C|E$ where precedence-bound jobs must be run in a fixed amount of time and should be scheduled to minimize energy use. This can be thought of as a special case of the release date and deadlines used in class for energy aware scheduling -- all of the jobs have release date $t = 0$ and deadline $t = C$. However, the problem is compelling even without this analogy. Consider the example of an expression tree where each job is to compute a subexpression. By setting a makespan $C$, we are saying that we do not care when the subexpressions are computed, we just want the final result of the full expression at time $C$. So in effect, we are only setting a deadline for the maximal jobs in the partial order.
+In particular, we want to consider the problem $P|prec, C_{max} = C|E$ where precedence-bound jobs must be run in a fixed amount of time and should be scheduled to minimize energy use. This can be thought of as a special case of the release date and deadlines used in class for energy aware scheduling -- all of the jobs have release date $t = 0$ and deadline $t = C$. However, the problem is compelling even without this analogy. Consider the example of an expression tree where each job is to compute a subexpression. By setting a makespan $C$, we are saying that we do not care when the subexpressions are computed, but just want the final result of the full expression at time $C$. So in effect, we are only setting a deadline for the maximal jobs in the partial order.
 
 A quick review of energy aware scheduling shows how solved problems differ from ours. The differences occur in a few directions. First, most works consider jobs with release dates and deadlines \cite{yao}, \cite{irani}, or release dates and flow time \cite{bansal}. To us, these models could be too restrictive in some cases: in applications like the expression trees mentioned above, we do not care when individual jobs are completed, rather we care about a deadline for the top level jobs and we care that jobs are completed in the correct order. Second, some energy aware scheduling algorithms are online and must schedule jobs as they come in \cite{yao}, \cite{irani}. This is an important problem, but it can be considerably harder than the offline case. Third, sometimes a slightly different energy model is used where machines can be idled for some fixed cost \cite{baptiste}. This could be a good direction to extend our work, especially because many precedence graphs require some amount of idling. But again, we ignore idling for the sake of relative simplicity.
 
@@ -73,9 +73,9 @@ Similarly, we should review precedence constraints: most relevantly the problem 
 \subsection{Notation}
 We attempt to be consistent with the notation used in class. Use $n$ to denote the total number of jobs, $m$ the number of machines, and $C_{max}$ the latest completion time or makespan. The variable $j$ will unless otherwise mentioned refer to one of the jobs, which are represented as elements of $[n] := \{1,\dots,n\}$. 
 
-Precedence constraints will be represented as a partial order $j \prec j'$ meaning that job $j$ must be completed before job $j'$ begins. We will often think of the underlying DAG of $\prec$ as a graph. A special case is when $\prec$ can be represented as a chain, a series $a_{n_1}, \dots, a_{n_k}$ such that $a_{n_\alpha} \prec a_{n_\beta}$ if and only if $\alpha < \beta$. These chains can be represented as graphs where the only edges are between adjacent $a_n$.
+Precedence constraints will be represented as a partial order $j \prec j'$ meaning that job $j$ must be completed before job $j'$ begins. We will often think of the underlying DAG of $\prec$ as a graph. A special case is when $\prec$ can be represented as a chain, a series $a_{n_1}, \dots, a_{n_k}$ such that $a_{n_\alpha} \prec a_{n_\beta}$ if and only if $\alpha < \beta$. These chains are then graphs where the only edges are between adjacent $a_n$.
 
-For energy aware scheduling, we assign each job a quantity of work $w_j > 0$. Then, we choose a speed $s$ for the machine to run at each time, and job $j$ started at time $t_0$ is completed at $t$ where $w_j = \int_{t_0}^t s(t) dt$. As shown in class, it is never beneficial to change speeds during a job, thus, a schedule is uniquely decided by a choice of start time, machine assignment, and duration for each job. The energy used by a machine is defined as $E = \int p(s(t))dt$ for some ``power function'' $p$. We only consider convex increasing power functions, for the reasons discussed in class. From a physical perspective, a realistic power function is $p(s) = s^\alpha$ where $\alpha \approx 3$. Energy adds linearly over jobs and machines.
+For energy aware scheduling, we assign each job a quantity of work $w_j > 0$. Then, we choose a speed $s$ for the machine to run at each time, and job $j$ started at time $t_0$ is completed at $t$ where $w_j = \int_{t_0}^t s(t) dt$. The energy used by a machine is defined as $E = \int p(s(t))dt$ for some ``power function'' $p$, where energy adds linearly over machines. We only consider convex increasing power functions, for the reasons discussed in class. From a physical perspective, a realistic power function is $p(s) = s^\alpha$ where $\alpha \approx 3$. Also, for a convex power function, it is never beneficial to change speeds during a job, so, a schedule is uniquely decided by a choice of start time, machine assignment, and duration for each job.
 
 Throughout, we only consider unit work jobs $w_j = 1$. Then, setting $C_{max} = C$, we find the schedule that minimizes energy assuming $m$ identical machines. This problem can be notated $P|prec, C_{max} = C|E$. For our actual implementation, we set $C = 1$, as the actual value should not affect the scheduling decisions made.
 
@@ -100,7 +100,7 @@ Because energies add, we can consider any set of disjoint chains of lengths $k_i
 \begin{equation} \label{eq:lb2}
 E \ge C \sum_i p(k_i/C).
 \end{equation}
-We do not have a reason to believe that either of these lower bounds is tight, nor the maximum of the two.
+We do not have a reason to believe that either of these lower bounds, or the maximum of the two, is tight.
 However, they are very natural lower bounds and will appear in the analysis of our approximation algorithm and our quantitative analysis.
 
 \subsection{Convex Program}
@@ -126,13 +126,28 @@ Conceptually, the existence of such a simple program means that if we can genera
 \section{Chains}
 We begin our investigation with chains, a simpler class of precedence constraints. We say that the precedence constraints form a set of chains if the out-degree and the in-degree are both bounded by 1 (and there are no cycles); in the in-arborescences we consider later, only the out-degree is bounded by 1. Each connected component in the precedence graph is one such ``chain'' and the length of the chain is the number of elements in it.
 
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}
+        \node[main node] at (1,0.5) (A1) {A};
+        \node[main node] at (2.2,0.5) (A2) {B};
+        \node[main node] at (1,1.5) (B1) {C};
+        \node[main node] at (2.2,1.5) (B2) {D};
+        \node[main node] at (1.6,2.5) (C) {E};
+        \draw[edge] (A1) to (A2);
+        \draw[edge] (B1) to (B2);
+        \end{tikzpicture}
+    \caption{An example of chain precedence constraints.}
+    \label{fig:chains}
+\end{figure}
+
 \subsection{Motivation}
 To inspire our algorithm, we consider the problem of minimizing the makespan of chains, notated \[P|chains|C_{max}\]
-It's easy to see that a greedy ``longest chain first''---a specific instance of the solution for a tree given in Hu \cite{hu}---solves this problem. At each timestep, iterate through each machine and select the job at the top of any chain with maximal length, if there are more chains left than machines; if there are more machines than chains left, and all chains have been ``scheduled'' for this round, a machine can be left idle. A promising first direction would be to start with a makespan-minimal schedule for chains and then scale each machine's schedule in order to get a makespan $C$ minimal energy schedule, as shown in Figure \ref{fig:chain_min}, though it's not immediately obvious why such an approach is correct, let alone optimal.
+It is easy to see that a greedy ``longest chain first''---a specific instance of the solution for a tree given in Hu \cite{hu}---solves this problem. At each timestep, we can iterate through each machine and select the job at the top of any chain with maximal length, if there are more chains left than machines; if there are more machines than chains left, and all chains have been ``scheduled'' for this round, a machine can be left idle. A promising first direction would be to start with a makespan-minimal schedule for chains and then scale each machine's schedule in order to get a makespan $C$ minimal energy schedule, as shown in Figure \ref{fig:chain_min}, though it's not immediately obvious if such an approach is correct, let alone optimal.
 
 \begin{figure}[h!]
 \begin{center}\input{cmax_chains_ex.tex}\end{center}
-\caption{A minimal makespan schedule and its scaled energy equivalent for the pictured set of chains.}
+\caption{A minimal makespan schedule and its scaled energy equivalent for the chains in Figure \ref{fig:chains}.}
 \label{fig:chain_min}
 \end{figure}
 
@@ -140,22 +155,20 @@ Indeed, such a rescaling is not always possible. In some cases, an even rescalin
 
 \begin{figure}[h!]
 \begin{center}\input{cmax_chains_bad_ex.tex}\end{center}
-\caption{Another LCF schedule for the chains in Figure \ref{fig:chain_min}. An even scaling would violate the precedence constraints in the red region, so we must scale differently. Specifically, the scaling to the right is optimal.}
+\caption{Another LCF schedule for the chains in Figure \ref{fig:chains}. An even scaling would violate the precedence constraints in the red region, so we must scale differently. Specifically, the scaling to the right is optimal.}
 \label{fig:chain_fail}
 \end{figure}
 
 \subsection{Cyclic Rule}
 If the machine iteration order and link selection from each chain is done in a specific manner, we can show that this scaling is always viable. 
-% not true?
-% The schedule that results from applying this special rule is then seen to be optimal. 
 Here is an outline of Algorithm \ref{alg:cyclic_chain_sched},  a \textit{cyclic rule} for breaking ties in Hu.
 \begin{enumerate}
 \item Sort chains by descending length, so that initially longer chains have higher \textit{chain priority}. If two chains have the same initial length, chain priority tie-breaking is arbitrary.
 \item Number each node in the chains with the dictionary order, first by height on a chain, and then by chain priority. This is a node's \textit{link priority}.
-\item Fix an order on the machines and iterate through them in that order each time step. To select a node to put on a machine, simply select the node with the highest link priority for which no other node in that chain has been selected that time step.
+\item Fix an order on the machines and iterate through them in that order each timestep. To select a node to put on a machine, simply select the node with the highest link priority for which no other node in that chain has been selected that timestep.
 \end{enumerate}
 
-We notate chains with $C_1, \ldots, C_c$, where $C_1$ has the highest priority and $c$ is the number of chains. In our discussion we also talk about instant priority of a chain at time $t$, which is just a chain's position in the dictionary order, sorted first by remaining chain length at time $t$, then by the chain priority assigned in step 1. Another way of looking at the assignments is noting that at machine iteration, we find the chain with the longest remaining length that is yet to be scheduled this timestep, and break ties with chain priority.
+We notate chains with $C_1, \ldots, C_c$, where $C_1$ has the highest priority and $c$ is the number of chains. In our discussion, we also mention the instant priority of a chain at time $t$, which is just a chain's position in the dictionary order, sorted first by remaining chain length at time $t$, then by the chain priority assigned in step 1. Another way of looking at the assignments is noting that at each machine iteration, we find the chain with the longest remaining length that is yet to be scheduled this timestep, and break ties with chain priority.
 
 \begin{figure}[h!]
 \begin{center}\input{cyclic_rule.tex}\end{center}
@@ -172,14 +185,14 @@ This builds on the algorithm given in \cite{hu} that specifies essentially how t
 \end{algorithm}
 
 \subsection{Viability}
-To show that scaling is always viable using the cyclic rule, it is important to note some structural properties of the schedules before scaling. The first is that if the machines are in order $M_1, \ldots, M_m$, then the number of jobs on $M_i$ is at least as many as the number of jobs on machine $M_{i+1}$, so that no timeslice has any ``holes'' in it. Also, no machine schedule has any holes in it; if a job is assigned to $M_i$ at time $t$, then for every $t' < t$, a job must have been assigned to machine $M_i$. Said another way:
+To show that scaling is always viable using the cyclic rule, it is important to note some structural properties of the schedules before scaling. The first is that if the machines are in order $M_1, \ldots, M_m$, then the number of jobs on $M_i$ is at least as many as the number of jobs on machine $M_{i+1}$, so that no timeslice has any ``holes'' in it. Similarly, no machine schedule has any holes in it; if a job is assigned to $M_i$ at time $t$, then for every $t' < t$, a job must have been assigned to machine $M_i$. Said another way:
 
 \begin{lemma}
 If $M_i$ has no job at time $t$, then for all $i' > i$, $M_{i'}$ has no job at any time $t' > t$.
 \end{lemma}
 
 \begin{proof}
-The cyclic rule works by iterating through each time step, and within each timestep, iterating through each machine. If at some time $t$ it is unable to assign a job to machine $M_i$, this means that all remaining chains have a link in that chain scheduled on an earlier machine at that timestep. It follows that no machine $M_{i'}$ with $i' > i$ will have a job scheduled at time $t$ either. This also implies that the number of remaining chains is less than $i$. Then at any time $t' > t$, the number of remaining chains is also less than $i$. All the chains will be exhausted before reaching $M_i$ at that timestep too.
+The cyclic rule works by iterating through each timestep, and within each timestep, iterating through each machine. If at some time $t$ it is unable to assign a job to machine $M_i$, this means that all remaining chains have a link in that chain scheduled on an earlier machine at that timestep. It follows that no machine $M_{i'}$ with $i' > i$ will have a job scheduled at time $t$ either. This also implies that the number of remaining chains is less than $i$. Then at any time $t' > t$, the number of remaining chains is also less than $i$. All the chains will be exhausted before reaching $M_i$ at that timestep too.
 \end{proof}
 
 So the result of our scheduling algorithm is a kind of staircase, with earlier machines extending farther. Using the lemma below, we establish the internal structure of schedule outputs from our algorithm, by showing that after two ``steps'' in the staircase, each machine must only have jobs from the same chain.
@@ -196,7 +209,7 @@ We show by a kind of backwards induction that for all $t' \leq t$, $C_j$ is stil
 
 This is true at time $t$: since the length of each chain present at time $t+1$ is one less than its length at $t$, the relative differences in their lengths are still the same, and so the longest chains at time $t$ are the same as those at time $t+1$. Within these chains, $C_j$ still has the highest initial chain priority. $C_j$ also has higher instant priority than the chains that finished at time $t$ because $C_j$ has at least 2 links at the start of time $t$, while the others have $1$. The chains that finish before $t$ have 0 chains remaining, 2 fewer than the $\geq 2$ chains on $C_j$. 
 
-If this is true at the start of time $t' \leq t$, it is also true at $t'-1$. This is because no chain ending before $t$ could possibly be scheduled on a machine before $C_j$ at time $t'-1$; if such a chain $C_k$ did get scheduled before $C_j$, $C_k$ must have started $t'-1$ with \emph{at least} 1 fewer chain than $C_j$ (in the case $C_j$ doesn't get scheduled), since at the start of $t'$, $C_k$ has at least 2 fewer chains than $C_j$ by the inductive hypothesis. Even in this scenario, $C_j$ is shorter than $C_k$ at the start of $t'-1$, so it can't be scheduled before $C_k$. The only chains that could be scheduled at $t'-1$ before $C_j$ are the chains ending after the start of $t$, of which there are fewer than $m$. $C_j$ is thus scheduled at time $t'-1$, so that its length at the start of $t'-1$ is one more than at the start of $t'$. Each chain $C_k$ can be scheduled at most once per timestep, so since $C_j$ is scheduled at $t'-1$, the amount by which $C_j$'s length exceeds the length of $C_k$ at $t'-1$ is at least as great as at $t'$, so that chains shorter than $C_j$ at $t'$ are shorter at $t'-1$, and among the chains of the same length as $C_j$ at $t'-1$, $C_j$ still has highest chain priority. Thus $C_j$ remains highest instant priority at $t'-1$; it is scheduled on $M_1$.
+If this is true at the start of time $t' \leq t$, it is also true at $t'-1$. This is because no chain ending before $t$ could possibly be scheduled on a machine before $C_j$ at time $t'-1$; if such a chain $C_k$ did get scheduled before $C_j$, $C_k$ must have started $t'-1$ with \emph{at least} 1 fewer chain than $C_j$ (in the case $C_j$ doesn't get scheduled), since at the start of $t'$, $C_k$ has at least 2 fewer chains than $C_j$ by the inductive hypothesis. Even in this scenario, $C_j$ is shorter than $C_k$ at the start of $t'-1$, so it can't have been scheduled before $C_k$. The only chains that could be scheduled at $t'-1$ before $C_j$ are the chains ending after the start of $t$, of which there are fewer than $m$. $C_j$ is thus scheduled at time $t'-1$, so that its length at the start of $t'-1$ is one more than at the start of $t'$. Each chain $C_k$ can be scheduled at most once per timestep, so since $C_j$ is scheduled at $t'-1$, the amount by which $C_j$'s length exceeds the length of $C_k$ at $t'-1$ is at least as great as at $t'$, so that chains shorter than $C_j$ at $t'$ are shorter at $t'-1$, and among the chains of the same length as $C_j$ at $t'-1$, $C_j$ still has highest chain priority. Thus $C_j$ remains as having the highest instant priority at $t'-1$; it is scheduled on $M_1$.
 
 The hypothesis is also true for $t' > t+1$, as going from $t'$ to $t'+1$ is just assigning the $i$-th highest priority chain to $M_i$; the differences between the chain lengths are preserved, so $C_j$ remains the highest priority chain at time $t'+1$. 
 \end{proof}
@@ -216,24 +229,24 @@ A stronger statement, that any machine with a job at time $t$ is a tower machine
 The place in the above proof where such an assertion would break down is in the inductive step, where we show that $C_j$ is actually assigned to a machine at time $t'-1$; without the extra timestep exclusive to $C_j$, $C_j$ could exceed $C_k$ in length by just 1, and so at the start of $t'-1$, their lengths may be the same, with $C_k$ having a higher chain priority. We can't conclude any more that only chains ending after $t$ could possibly be scheduled before $C_j$.
 
 \begin{corollary}
-If chain $C_j$ has links assigned to different machines $M_a$ and $M_b$ with $a < b$, then $|M_a| \leq |M_b| + 1$.
+If chain $C_j$ has links assigned to different machines $M_a$ and $M_b$ with $a < b$, then the number of jobs assigned to $M_a$, $|M_a|$, is no more than $|M_b| + 1$.
 \end{corollary}
 \begin{proof}
-If not, then $|M_a| \geq |M_b| + 2$. Then $M_b$ is empty at time $|M_b|+1$ but $|M_a|$ has a job at $|M_b|+2 \leq |M_a|$; it must therefore contain all of $C_j$, contrary to $C_j$'s assignment on $M_b$.
+If not, then $|M_a| \geq |M_b| + 2$. Then $M_b$ is empty at time $|M_b|+1$ but $|M_a|$ has a job at $|M_b|+2 \leq |M_a|$; by Theorem \ref{thm:towers} it must therefore contain all of $C_j$, contrary to $C_j$'s assignment on $M_b$.
 \end{proof}
 
 \begin{lemma}\label{tilemma}
 If $C_j$ is scheduled on $M_i$ at time $t$ and $C_j$ is scheduled at time $t+1$ on $M_k$, then $k \geq i$. 
 \end{lemma}
 \begin{proof}
-If $C_j$ is scheduled on $M_i$ at time $t$, $i-1$ other chains $C_{j_k}$ must have been scheduled on $M_k$ for $k \in [i-1]$, so that at the start of time $t$, each $C_{j_k}$ was either longer or of the same length but of higher chain priority than $C_j$. At the start of $t+1$, each $C_{j_k}$, as well as $C_j$, have decreased in length by 1; the relative differences in lengths are the same, so each $C_{j_k}$ would still go before $C_j$ in assignment if $C_j$ is scheduled at $t+1$; $C_j$ must therefore go after $i-1$ other jobs, so the earliest machine it could be assigned to is $M_i$.
+If $C_j$ is scheduled on $M_i$ at time $t$, $i-1$ other chains $C_{j_k}$ must have been scheduled on $M_k$ for $k \in [i-1]$, so that at the start of time $t$, each $C_{j_k}$ was either longer or of the same length but of higher chain priority than $C_j$. At the start of $t+1$, each $C_{j_k}$, as well as $C_j$, has decreased in length by 1; the relative differences in lengths are the same, so each $C_{j_k}$ would still go before $C_j$ in assignment if $C_j$ is scheduled at $t+1$; $C_j$ must therefore go after $i-1$ other jobs, so the earliest machine it could be assigned to is $M_i$.
 \end{proof}
 
 \begin{theorem}
 Scaling each machine's schedule evenly to fit a single makespan does not violate precedence constraints, and therefore maintains a valid schedule.
 \end{theorem}
 \begin{proof}
-None of the tower machines/chains will cause any precedence violations after scaling, because each of the chains is set on a single machine. The remaining machines have length either $\ell$ or $\ell-1$, and due to the staircase schedule structure, the machine with the longer assignment must have an earlier index.
+None of the tower machines/chains will cause any precedence violations after scaling, because each of the chains is set on a single machine. There is some $\ell$ such that the remaining machines have length either $\ell$ or $\ell-1$, and due to the staircase schedule structure, the machine with the longer assignment must have an earlier index.
 
 If in the unscaled schedule, job $c$ on machine $M_a$ at time interval $[t_c, t_c+1)$ is a parent of job $d$ on $M_b$ at $[t_d, t_d+1)$, then $t_c+1 \leq t_d$. If $|M_a| \geq |M_b|$, then composing the two inequalities, we get that the scaled end-time of $c$, $(t_c+1)/|M_a| \leq t_d/|M_b|$, the scaled start-time of $d$, so no precedence constraints are violated. Otherwise, $|M_a| = |M_b| - 1 = \ell-1$; in this case, $b < a$, and $t_d$ cannot be $t_c+1$ by Lemma \ref{tilemma}, so $t_d \geq t_c + 2$. We also have that $t_d+1 \leq \ell$, so $t_d/\ell < 1$, so that $t_d \geq t_c + 2 > t_c + 1 + t_d/\ell$. Rearranging this, we get
 \[t_d\ell > t_d + \ell + t_c\ell \implies t_d(\ell - t_d) > t_c\ell + \ell \implies \frac{t_d}{\ell} > \frac{t_c+1}{\ell-1}\] which is the desired inequality expressing that the scaled start time of the child is after the scaled end time of the parent.
@@ -241,15 +254,15 @@ If in the unscaled schedule, job $c$ on machine $M_a$ at time interval $[t_c, t_
 
 \subsection{Optimality}
 
-With knowledge of the structure of the schedules produced by the algorithm, it's tempting to think that the global optimality of this algorithm is trivial. The longest chains are given their own machines so that the jobs that \textit{need} to be short as a result of tight precedence constraints are given as much room as possible. The other chains are scheduled on the rest of the machines with the load almost perfectly evenly distributed. Yet, we had some difficulty proving this statement, and that this cyclic rule would result in such an emergent structure was not obvious when we first played with algorithm ideas.
+With knowledge of the structure of the schedules produced by the algorithm, it's tempting to think that the global optimality of this algorithm is trivial. The longest chains are given their own machines so that the jobs that \textit{need} to be short as a result of tight precedence constraints are given as much room as possible. The other chains are scheduled on the rest of the machines with the load almost perfectly evenly distributed. Yet, we had some difficulty proving this statement, and even that this cyclic rule would result in such an emergent structure was not obvious when we first played with algorithm ideas.
 
-It is, however, easy to see by convexity that for the machine assignment produced by our algorithm, evenly scaling each machine's schedule to match a single makespan will minimize the energy. In fact, a stronger statement follows almost immediately. Each tower chain $C_j$ is minimal in its energy usage, since no matter the machine assignment, the sum of the lengths of each link on the chain must cannot exceed the makespan due to precedence constraints. Convexity says that in this case, the lowest energy results when each link in the chain has length $C_{max}/|C_j|$, which is what our algorithm does.
+It is, however, easy to see by convexity that after fixing the machine assignment with the one produced by our algorithm, evenly scaling each machine's schedule to match a single makespan will minimize the energy. In fact, a stronger statement follows almost immediately. Each tower chain $C_j$ is minimal in its energy usage, since no matter the machine assignment, the sum of the lengths of each link on the chain must cannot exceed the makespan due to precedence constraints. Convexity says that in this case, the lowest energy results when each link in the chain has length $C_{max}/|C_j|$, which is what our algorithm does.
 
 Further, the non-tower machines have jobs as evenly distributed between them as possible---as their length is either $\ell$ or $\ell+1$---so that among the non-tower chains/machines, our even scaling leads to the optimal energy schedule.
 
 In a sense, our algorithm is optimal if a set---or just number---of tower machines $m_t$ is fixed beforehand. From there it's obvious that assigning the largest $m_t$ chains in the problem instance as the tower chains would be the most beneficial.
 
-The optimality result we're able to prove is only for a single tower chain. The schedule transformation used to show this, or even this proof approach, was not at all obvious to us initially. It relies on showing that given any schedule with just one tower chain, we can create a better one one that has the tower chain on its own machine. It relies on the following property of convexity.
+The optimality result we were able to prove is only for a single tower chain. The transformations in our exchange argument was not at all obvious to us initially. It relies on showing that given any schedule with just one tower chain, we can create a better one one that has the tower chain on its own machine. It relies on the following property of convexity.
 \begin{fact}[Karamata]
 \def\reals{\mathbb{R}}
 Let $I$ be an interval. If $x_1, \ldots, x_n, y_1, \ldots, y_n \in I$ are such that $x_1 \geq \cdots \geq x_n$ and $y_1 \geq \cdots \geq y_n$ and $x$ majorizes $y$, i.e., for all $k \in [n]$,
@@ -258,15 +271,15 @@ then for any nondecreasing, convex $f : I \to \reals$,
 \[\sum_{i=1}^n f(x_i) \geq \sum_{i=1}^n f(y_i)\]
 \end{fact}
 \begin{lemma}[Swapping]\label{swap}
-If a schedule contains a $t_n$-duration block of $n$ back-to-back unit-work jobs at uniform speed and elsewhere contains a $t_m$-long block of $m$ back-to-back unit-work jobs at uniform speed. If $t_m \geq t_n$ and $n \geq m$, then swapping the two block durations, so that the $n$ block takes time $t_m$ and the $m$ takes time $t_n$, with the time in each block still split between jobs evenly, the new schedule will require no more energy.
+Suppose a schedule contains a $t_n$-duration block of $n$ unit-work jobs at uniform speed and elsewhere contains a $t_m$-long block of $m$ unit-work jobs at uniform speed. If $t_m \geq t_n$ and $n \geq m$, then swapping the two block durations, so that the $n$ block takes time $t_m$ and the $m$ takes time $t_n$, with the time in each block still split between jobs evenly, will create a new schedule using no more energy than the original.
 \end{lemma}
 \begin{proof}
 Each job in the original $n$ block takes time $t_n/n$, and thus power $p(n/t_n)$, so the entire $n$ block originally takes $n\cdot p(n/t_n)$. Similarly, the $m$ block takes power $m\cdot p(m/t_m)$. After swapping, the new power required for $n$ is $n\cdot p(n/t_m)$ and for $m$, $m\cdot p(m/t_n)$.
 
 If $n \geq m$ and $t_m \geq t_n$, then $n/t_n$ is greater than $n/t_m$, $m/t_n$, which are both greater than $m/t_m$. Then the sequence $x = (n/t_n, \ldots, n/t_n, m/t_m, \ldots, m/t_m)$ is nondecreasing and majorizes nondecreasing sequence $y$, defined as $(n/t_m, \ldots, n/t_m, m/t_n, \ldots, m/t_n)$ or the reverse, in case $m/t_n > n/t_m$. This is because for $i \in [n]$, $x_i = n/t_n$ exceeds every element in $y$, so $x$ majorizes $y$ up to index $n$. Furthermore, $x$ majorizes $y$ at $m+n$:
-\[\sum_{i=1}^{m+n}x_i = n^2/t_n + m^2/t_m \geq m^2/t_n + n^2/t_m = \sum_{i=1}^{m+n}y_i\]
+\[\sum_{i=1}^{m+n}x_i = \frac{n^2}{t_n} + \frac{m^2}{t_m} \geq \frac{m^2}{t_n} + \frac{n^2}{t_m} = \sum_{i=1}^{m+n}y_i\]
 as $n^2(1/t_n - 1/t_m) \geq m^2(1/t_n - 1/t_m)$ for $n \geq m$ and $t_m \geq t_n$. Since each $x_{n+i} = m/t_m$ for $i \in [m]$ is smaller than anything in $y$, the difference $x_{n+i} - y_{n+i}$ is negative. If at any point $i$ between $n$ and $n+m$, $x$ does not majorize $y$, the negative difference would make $x$ to not majorize $y$ at $i+1$, then $i+2$, and so on. Since $x$ majorizes $y$ at the end, $x$ must majorize $y$ at all values. By Karamata,
-\[\sum_{i=1}^{n+m}p(x_i) = \sum_{i=1}^n p(n/t_n) + \sum_{i=n+1}^{n+m} p(m/t_m) = n\cdot p(n/t_m) \geq \sum_{i=1}^{n+m}p(y_i) = n\cdot p(n/t_m) + m\cdot p(m/t_n)\]
+\[\sum_{i=1}^{n+m}p\p*{x_i} = \sum_{i=1}^n p\p*{\frac{n}{t_n}} + \sum_{i=n+1}^{n+m} p\p*{\frac{m}{t_m}} = n\cdot p\p*{\frac{n}{t_m}} \geq \sum_{i=1}^{n+m}p\p*{y_i} = n\cdot p\p*{\frac{n}{t_m}} + m\cdot p\p*{\frac{m}{t_n}}\]
 \end{proof}
 
 \begin{figure}[h!]
@@ -298,7 +311,7 @@ as $n^2(1/t_n - 1/t_m) \geq m^2(1/t_n - 1/t_m)$ for $n \geq m$ and $t_m \geq t_n
 \label{fig:swap_ex}
 \end{figure}
 
-Basically swapping a block tighter in both work and time with another that has more time and less work will reduce energy, with some constraints. Frustratingly, a stronger version of the lemma that doesn't require the block to run at uniform speed doesn't seem to hold in general, for example if $n$ has 2 jobs taking time $1/2$ each and $m$ has 2 jobs taking time $3/2$ and $1/2$, and $p(x) = x^2$. The original schedule would take energy $2^2 + 2^2 + (2/3)^2 + 2^2 \approx 12.44$, while the new one would take $1^2 + 1^2 + (4/3)^2 + 4^2 \approx 19.78$. Thankfully we found a way around this using the weaker version.
+Basically swapping a block tighter in both work and time with another that has more time and less work will reduce energy, with some constraints. Frustratingly, a stronger version of the lemma that doesn't require the block to run at uniform speed doesn't seem to hold in general, for example if $n$ has 2 jobs taking time $1/2$ each and $m$ has 2 jobs taking time $3/2$ and $1/2$, and $p(x) = x^2$. The original schedule would take energy $2^2 + 2^2 + (2/3)^2 + 2^2 \approx 12.44$, while the new one would take $1^2 + 1^2 + (4/3)^2 + 4^2 \approx 19.78$. Fortunately, this stronger version is not necessary for our proof.
 
 \begin{figure}[h!]
 \begin{center}
@@ -341,7 +354,7 @@ Given an energy schedule on jobs $a_1, \ldots, a_n$ and $b_1, \ldots, b_m$ such 
 \begin{proof}
 The general procedure for this starts at $a_1$ and finds a way to put it on the same machine as $a_2$, directly underneath it. It then finds a way to put the now-contiguous $a_1a_2$ block and puts it under $a_3$, and so on. Formally, let the schedule that respects precedence constraints be $S_1$, and from $S_i$ we can construct $S_{i+1}$ by finding the contiguous block of $c_i = a_1\cdots a_i$ in $S_i$ and modifying $S_i$ so that $c_i$ is placed underneath $a_{i+1}$ in a way that doesn't increase energy use and preserves precedence. Let $j_1, \ldots, j_k$ be the jobs scheduled before $a_{i+1}$ on $a_{i+1}$'s machine, where $b_{j_1}$ is scheduled before $b_{j_2}$, and so on. We have two cases:
 
-If $k \geq i$, there are at least as many jobs under $a_{i+1}$ as in $a_1\cdots a_i$, and what we can do here is simply swap $a_i$ with $j_k$, $a_{i-1}$ with $j_{k-1}$, and so on until $a_1$ with $j_{k-i+1}$. The distribution of speeds across machines is still the same, so energy is preserved. Furthermore, no precedence constraints within $a_1, \ldots, a_i$ or between this block and $a_{i+1}, \ldots, a_n$ have been broken because they are all in sequence underneath $a_{i+1}$; nothing within $a_{i+1}, \ldots, a_n$ has broken either because we didn't change any of those jobs' positions. This is our $S_{i+1}$. See Figure \ref{fig:swap_1}. 
+If $k \geq i$, there are at least as many jobs under $a_{i+1}$ as in $a_1\cdots a_i$, and we can simply swap $a_i$ with $j_k$, $a_{i-1}$ with $j_{k-1}$, and so on until $a_1$ with $j_{k-i+1}$. The distribution of speeds across machines is still the same, so energy is preserved. Furthermore, no precedence constraints within $a_1, \ldots, a_i$ or between this block and $a_{i+1}, \ldots, a_n$ have been broken because they are all in sequence underneath $a_{i+1}$; nothing within $a_{i+1}, \ldots, a_n$ has broken either because we didn't change any of those jobs' positions. This is our $S_{i+1}$. See Figure \ref{fig:swap_1}. 
 
 \begin{figure}[h!]
 \begin{center}
@@ -396,7 +409,7 @@ If $k \geq i$, there are at least as many jobs under $a_{i+1}$ as in $a_1\cdots 
 \label{fig:swap_1}
 \end{figure}
 
-Otherwise, there are $k < i$ jobs under $a_{i+1}$. In this case, we can first flatten $c_i$ so that all $a_1, \ldots, a_i$ take the same amount of time. Lemma \ref{flat} guarantees that energy is not increased, and precedence is still preserved as $a_1, \ldots, a_i$ are still in sequence before $a_{i+1}$, as they were in the original $S_i$. We also flatten $j_1, \ldots, j_k$ which doesn't affect precedence (as $j_1, \ldots, j_k$ are disjoint from $a_1, \ldots, a_i$, or else $k \geq i$). Since $j_1\cdots j_k$ ends at the start of $a_{i+1}$, it's at least as long as $a_1\cdots a_i$, so Lemma \ref{swap} guarantees that swapping these two flattened blocks will not increase energy use. Like in the first case, precedence is preserved because nothing above or at $a_{i+1}$ has changed, and $a_1, \ldots, a_i$ are now in sequence underneath $a_{i+1}$. See Figure \ref{fig:swap_2}
+Otherwise, there are $k < i$ jobs under $a_{i+1}$. In this case, we can first flatten $c_i$ so that all $a_1, \ldots, a_i$ take the same amount of time. Lemma \ref{flat} guarantees that energy is not increased, and precedence is still preserved as $a_1, \ldots, a_i$ are still in sequence before $a_{i+1}$, as they were in the original $S_i$. We also flatten $j_1, \ldots, j_k$ which doesn't affect precedence (as $j_1, \ldots, j_k$ are disjoint from $a_1, \ldots, a_i$, or else $k \geq i$). Since $j_1\cdots j_k$ ends at the start of $a_{i+1}$, it's at least as long as $a_1\cdots a_i$, so Lemma \ref{swap} guarantees that swapping these two flattened blocks will not increase energy use. Like in the first case, precedence is preserved because nothing above or at $a_{i+1}$ has changed, and $a_1, \ldots, a_i$ are now in sequence underneath $a_{i+1}$. See Figure \ref{fig:swap_2}.
 
 \begin{figure}[h!]
 \begin{center}
@@ -484,18 +497,18 @@ Given an input instance for which the cyclic rule produces one tower chain $a_1,
 
 If there are fewer jobs on $M_1$ than $n$ in $S'$, flatten the entire $M_1$ schedule, flatten $a_1\cdots a_n$, and swap the two blocks so that only $a_1, \ldots, a_n$ is on $M_1$. Otherwise, swap the latest job on $M_1$ with $a_n$, the 2nd with $a_{n-1}$, and so on so that $a_1, \ldots, a_n$ are in sequence on $M_1$ but there may be some jobs $j_1, \ldots, j_k$ underneath.
 
-Flatten all machine schedules in $S'$; this doesn't violate precedence because all $a_i$ are in sequence on $M_1$. Finally, for each $i \in [k]$, move $j_i$ to the a machine in $M_2, \ldots, M_m$ with fewest jobs, and flatten all machine schedules of $S'$ again. To show that each step conserves energy, we just need to show that we're always moving from a machine with more jobs to a machine with fewer. (A more rigorous argument would use the fact that if one machine had $a$ jobs and another had $b > a$, then $a^{-1}, \ldots, a^{-1}, b^{-1}, \ldots, b^{-1}$ majorizes $(a+1)^{-1}, \ldots, (a+1)^{-1}, (b-1)^{-1}, \ldots, (b-1)^{-1}$).
+Flatten all machine schedules in $S'$; this doesn't violate precedence in $a$ because all $a_i$ are in sequence on $M_1$. Finally, for each $i \in [k]$, move $j_i$ to the a machine in $M_2, \ldots, M_m$ with fewest jobs, and flatten all machine schedules of $S'$ again. To show that each step conserves energy, we just need to show that we're always moving from a machine with more jobs to a machine with fewer. (A more rigorous argument would use the fact that if one machine had $a$ jobs and another had $b > a$, then $a^{-1}, \ldots, a^{-1}, b^{-1}, \ldots, b^{-1}$ majorizes $(a+1)^{-1}, \ldots, (a+1)^{-1}, (b-1)^{-1}, \ldots, (b-1)^{-1}$).
 
-Let $n'$ be the number of jobs not in $a$ and $m$ the number of machines. At least one machine in $M_2, \ldots, M_m$ in our current $S'$ has at most $\ceil{n'/(m-1)}$ jobs, or else the total number of jobs on $M_2, \ldots, M_m$ would exceed $(m-1)(\ceil{n'/(m-1)} + 1) \geq n' + 1$, implying one of these machines has a job in $a$, contrary to all of $a$ being on $M_1$. Since $a$ is a tower chain, $n$ exceeds $\ceil{n'/(m-1)}$, because each non-tower machine in a \emph{cyclic rule} schedule differs from each other in number of jobs by at most 1, so the job numbers on those machines are $\floor{n'/(m-1)}$ or $\ceil{n'/(m-1)}$, where at least one machine has $\floor{n'/(m-1)}$; and then a tower machine has at least 2 more jobs than that. Thus $M_1$, having more than $n > \ceil{n'/(m-1)}$, is always moving to a machine with at most $\ceil{n'/(m-1)}$ jobs. 
+Let $n'$ be the number of jobs not in $a$ and $m$ the number of machines. At least one machine in $M_2, \ldots, M_m$ in our current $S'$ has at most $\ceil{n'/(m-1)}$ jobs, or else the total number of jobs on $M_2, \ldots, M_m$ would exceed $(m-1)(\ceil{n'/(m-1)} + 1) \geq n' + 1$, implying one of these machines has a job in $a$, contrary to all of $a$ being on $M_1$. Since $a$ is a tower chain, $n$ exceeds $\ceil{n'/(m-1)}$, because each non-tower machine in a \emph{cyclic rule} schedule differs from each other in number of jobs by at most 1, so the job numbers on those machines are $\floor{n'/(m-1)}$ or $\ceil{n'/(m-1)}$, where at least one machine has $\floor{n'/(m-1)}$; and then a tower machine has at least 2 more jobs than that. Thus $M_1$, having more than $n > \ceil{n'/(m-1)}$, is always moving jobs to a machine with at most $\ceil{n'/(m-1)}$ jobs. 
 
-An optimal schedule $S$ exists in which: $M_1$ has all and only jobs from $a$, each machine runs at a uniform speed, and precedence in chain $a$ (but possibly not the others) is preserved.
+Then an optimal schedule $S$ exists in which: $M_1$ has all and only jobs from $a$, each machine runs at a uniform speed, and precedence in chain $a$ (but possibly not the others) is preserved.
 
-We claim that the cyclic rule output $C$ is at least as good as this final $S$. The energy $M_1$ uses on both $S$ and $C$ is the same. Among $M_2, \ldots, M_m$, $C$ and $S$ are also flat, but somehow $C$ distributes the remaining jobs maximally evenly, putting $\ell + 1$ jobs on some machines and $\ell$ on others. We can use Karamata one more time: if a machine schedule is completely flat and has $k$ jobs, the energy used by that machine, $q(k) = k\cdot p(1/k)$. For second-differentiable $p$, $q''(k) = p''(1/k)/k^3$, which is nonnegative for $k > 0$, since $p$ is convex. Thus $q$ is convex. Any sequence $y$ with the same sum majorizes $x = (\ell+1, \ldots, \ell + 1, \ell, \ldots, \ell)$, so if $y$ is the sequence of job quantities on $M_2, \ldots, M_m$ in $S$, $q(y_1) + \cdots, q(y_{m-1}) \geq q(x_1) + \cdots + q(x_{m-1})$, the energy used by $M_2, \ldots, M_m$ in $C$.
+We claim that the cyclic rule output $C$ is at least as good as this final $S$. The energy $M_1$ uses on both $S$ and $C$ is the same. Among $M_2, \ldots, M_m$, $C$ and $S$ are also flat, but somehow $C$ distributes the remaining jobs maximally evenly, putting $\ell + 1$ jobs on some machines and $\ell$ on others. We can use Karamata one more time: if a machine schedule is completely flat and has $k$ jobs, the total energy used by that machine is $q(k) = k\cdot p(1/k)$. For second-differentiable $p$, $q''(k) = p''(1/k)/k^3$, which is nonnegative for $k > 0$, since $p$ is convex. Thus $q$ is convex. Any sequence $y$ with the same sum majorizes $x = (\ell+1, \ldots, \ell + 1, \ell, \ldots, \ell)$, so if $y$ is the sequence of job quantities on $M_2, \ldots, M_m$ in $S$, $q(y_1) + \cdots, q(y_{m-1}) \geq q(x_1) + \cdots + q(x_{m-1})$, the energy used by $M_2, \ldots, M_m$ in $C$.
 
 Since $C$ uses at most as much energy as $S$ and is also valid precedence-wise, $C$ is optimal.
 \end{proof}
 
-Unfortunately, where this construction seems to breaks down is with multiple tower chains. One keystone of this argument is that in transforming a schedule into one with a tower chain solely on one machine, precedence for other jobs don't matter. This is a valid assumption when there's at most 1 tower chain because given the job quantities on the other non-tower machines, the actual job assignments can be set so as to preserve precedence. If there are multiple tower chains, naive extensions to the swapping transformation on one chain seem to break precedence on other chains, and restricting the swaps naively so that chains don't interfere with each other make it sometimes impossible to swap and conserve energy. Another approach may be necessary here.
+Unfortunately, where this construction seems to breaks down is with multiple tower chains. One keystone of this argument is that in transforming a schedule into one with a tower chain solely on one machine, precedence for other jobs don't matter. This is a valid assumption when there's at most 1 tower chain because given the job quantities on the other non-tower machines, the actual job assignments can be set so as to preserve precedence. If there are multiple tower chains, naive extensions to the swapping transformation on one chain seem to break precedence on other chains, and a similar naive restriction on the swaps so that chains don't interfere with each other makes it sometimes impossible to swap \emph{and} conserve energy. A different approach may be necessary here.
 
 We were confident even before proving optimality for a single tower chain that this algorithm is optimal. Now, we know that given an input and an identification of certain chains as towers (through the cyclic rule), the optimal schedule for a subinput with only 1 tower and all the non-towers just puts the tower on 1 machine and spreads the non-towers over the others; i.e., the behavior of the non-towers doesn't change when you add a machine and tower chain. It seems just out of reach that this property holds when we add a second, or third, or fourth machine/chain.
 
@@ -506,13 +519,13 @@ The same question in the chains discussion applies in this more general class of
 \subsubsection{Cyclic Rule}
 One promising heuristic is the cyclic rule generalized for trees, described below:
 \begin{enumerate}
-\item Given a node on a tree, the sort each child by descending subtree depth, so that initially longer subtrees have higher \emph{local subtree priority}. If two nodes' have the same initial length, local subtree priority tie-breaking is arbitrary.
+\item Given a node on a tree, sort each child by descending subtree depth, so that initially longer subtrees have higher \emph{local subtree priority}. If two nodes' have the same initial length, local subtree priority tie-breaking is arbitrary.
 \item A node $A$ has a higher \emph{global subtree priority} than $B$ if $A$ is a descendant of $B$ or if the child of the lowest common ancestor of $A$ and $B$ containing $A$ has a higher local subtree priority than the child of the LCS of $A$ and $B$ containing $B$.
 \item Number each node in the tree with the dictionary order, first by depth of the node, and then by global subtree priority. This is a node's \emph{node priority}.
-\item Fix an order on the machines and iterate through them in that order each time step. To select a node to put on a machine, simply select the node with the node priority that doesn't have a node in its subtree scheduled at the same time.
+\item Fix an order on the machines and iterate through them in that order each . To select a node to put on a machine, simply select the node with the node priority that doesn't have a node in its subtree scheduled at the same time.
 \end{enumerate}
 
-You can think of this as shifting the tree so that each node has its longest subtrees on the right. Then a node's node priority is just its depth, then how far to the right it is.
+You can think of this as shifting the tree in 2-dimensional space so that each node has its longest subtrees below it on the right. Then a node's node priority is just its depth, then how far to the right it is.
 
 What's appealing about this heuristic is that is naturally extends the heuristic for chains. Note that if the tree is a set of chains attached to a single root, then the global subtree priority corresponds to chain priority (the ordering relation between nodes in a chain instead of chains themselves) and node priority to link priority. When applied to chains, the cyclic rule had a nice property of minimizing the interference of precedence and scaling, allowing us to scale optimally. Though it's a toy example, the same behavior is apparent in Figure \ref{fig:cyct_ex}.
 
@@ -527,7 +540,7 @@ Furthermore, when the number of nodes at a particular depth is either much great
 \subsubsection{Zigzag Rule}
 Another possible choice is to iterate through the machines in backwards order every other timestep. This is appealing because it tries to distribute the number of jobs more evenly among the machines, rather than always pile a job on the first machine if it's available.
 
-We suspected that this was strictly worse than the cyclic rule due to its poor performance on chains, and we had even hoped the cyclic rule would turn out to be optimal, but our experiments refuted that. It's hard to find an easy example, since the interesting behavior seems to be in some Goldilocks zone, in which the number of bottom-level nodes left to be scheduled is around the same as the number of machines.
+We suspected that this was strictly worse than the cyclic rule due to its poor performance on chains, and we had even hoped the cyclic rule would turn out to be optimal, but our experiments refuted that. It's hard to find an intuitive example, since the interesting behavior seems to be in some Goldilocks zone, in which the number of bottom-level nodes left to be scheduled is around the same as the number of machines, but one counterexample is given in Figure \ref{fig:zz_ex}.
 
 \begin{figure}[h!]
 \input{zz_ex.tikz}
@@ -541,7 +554,7 @@ The random heuristic orders subtrees randomly, instead of performing the sort by
 For the random heuristic to perform well, it would have to be the case that it would be relatively easy to choices close to optimally; i.e. most random decisions should not raise the energy too much. If there are very few bad choices, we could even hope that, if repeated enough times, the random heuristic makes all the best choices and output the optimal algorithm of this type.
 
 \subsection{Approximation Algorithm}
-We restrict to the case of polynomial power consumption, i.e. $p(s) = s^\alpha$ for $\alpha \ge 2$. This allows us to apply the power mean inequality instead of appealing to convexity, making a simple proof and a concrete bound. The relevant case of the inequality is stated here, and is a corollary to Jensen's inequality.
+Here, we restrict to the case of polynomial power consumption, i.e. $p(s) = s^\alpha$ for $\alpha \ge 2$. This allows us to apply the power mean inequality instead of appealing to convexity, making a simple proof and a concrete bound. The relevant case of the inequality is stated here, and is a corollary to Jensen's inequality.
 
 \begin{fact}[Power Mean]
 For any positive $a_1, \dots, a_k$ and $\alpha \ge 1$:
@@ -558,7 +571,7 @@ Thus, if we have a chain decomposition of a DAG, we can always schedule blocks s
 
 For trees, it is fairly obvious how to create a chain decomposition. For a formal iterative algorithm, see the paper or our source code.
 Here is a mathematical description of the decomposition, which gives bound on $\lambda$.
-Quotient the tree by the following equivalence relation: $v \sim u$ if $u$ is the only child of $v$.
+Quotient the tree by the following equivalence relation: $v \sim u$ if $u$ is the only child of $v$ or $u$'s only child is $v$, or $u = v$.
 Clearly the equivalence classes are chains. Additionally, there are precedence relations between equivalence classes.
 By construction, each equivalence class has either 0 or 2 or more children, giving us a tree with degree always at least 2.
 Thus the height of the tree is at most $\log n$. Letting block $B_i$ be the set of chains at height (leaves are height 1) $i$, we conclude $\lambda \le \log n$.
@@ -570,7 +583,7 @@ In fact, this is the best lower bound for $\lambda$ in terms of $n$, as it is ma
 \label{fig:chain_decompose}
 \end{figure}
 
-The approximation algorithm (Algorithm \ref{alg:approx_tree_sched}) uses our chain-scheduling algorithm on each block, then scales the blocks to evenly distribute jobs on the busiest ($1^{st}$ by construction) machine.
+The approximation algorithm (Algorithm \ref{alg:approx_tree_sched}) uses our chain-scheduling algorithm on each block, then scales the blocks to evenly distribute jobs on the busiest (1st by construction) machine.
 
 \begin{algorithm}
     \caption{An $O\p*{2^{2\alpha-1}m\p*{\log^{\alpha-1}n}}$ approximation algorithm for $P|tree,C_{max} = C|E$}
@@ -650,13 +663,13 @@ As $\lambda \le \log n$, we have
 This ratio increases drastically with $\alpha$, however, the most realistic setting is $\alpha = 3$ regardless of problem size. So in most applications $2^{2\alpha - 1} \approx 32$, a relatively small constant. Either of $m$ and $\log^{\alpha-1} n$ can dominate the expression, depending on their relative magnitudes. If $\lambda$ is smaller, i.e. the graph has fewer levels of chains, we note the algorithm performs better.
 
 \subsection{Extension to Forests}
-Consider a forest of in and out trees. Such a graph will have a chain decomposition with $\lambda \le 2 \p*{\ceil{\log n} + 1}$ (proof omitted) \cite{kumar}. Using this chain decomposition, we could simply run the same algorithm, and the analysis goes through almost identically, until we substitute in for the value of $\lambda$.
+Consider a forest of in and out arborescences. Such a graph will have a chain decomposition with $\lambda \le 2 \p*{\ceil{\log n} + 1}$ (proof omitted) \cite{kumar}. Using this chain decomposition, we could simply run the same algorithm, and the analysis goes through almost identically, until we substitute in for the value of $\lambda$.
 
 \begin{theorem}
 Algorithm \ref{alg:approx_tree_sched} is a $\rho \in O\p*{2^{3\alpha-2}m\p*{\log^{\alpha-1}n}}$ approximation for $P|forests, C_{max} = C|E$.
 \end{theorem}
 \begin{proof}
-Follows as for Theorem \ref{thm:approx}, using the value $\lambda \le 2 \p*{\ceil{\log n} + 1}$ guaranteed for forests.
+Each step but the last in the proof of Theorem \ref{thm:approx} holds in this setting as well. Use the value $\lambda \le 2 \p*{\ceil{\log n} + 1}$ guaranteed for forests instead, giving the desired bound.
 \end{proof}
 
 \section{Experiment}
@@ -671,10 +684,28 @@ We used the English language data from the Universal Dependencies project, avail
 For a set of trees, we used a corpus of written language dependencies. A dependency grammar is a syntactic model in linguistics that induces a certain tree on the words of a sentence. Thus the generated schedules represent recursively computing a function over a word's dependents for example. More generally, we hope these trees present a reasonable variety of test cases, with varying degree and height. They range from a few nodes to about one hundred; these are about the largest programs we can optimize quickly enough on personal computers.
 
 \subsection{Results}
-For each test case, we noted the number of machines, the number of jobs, the height of the tree, and the energy use. After dividing energy use by our lower bounds to get a metric that was close to the approximation ratio for each algorithm, we plotted this metric against the number of machines and the number of jobs, with error bars representing 1 standard deviation in one direction within the data. The plots are below.
+For each test case, we noted the number of machines, the number of jobs, the height of the tree, and the energy use. After dividing energy use by our lower bounds to get a metric that was close to the approximation ratio for each algorithm, we plotted this metric against the number of machines and the number of jobs, with error bars (abused---since the underlying data has its own variance---so that they represent) 1 standard deviation in one direction within the data. The plots are below.
+\begin{figure}[h!]
+\centering \includegraphics[scale=0.41]{jobs.eps}
+\caption{Ratio vs. jobs, mean across number machines}
+\end{figure}
+
+\begin{figure}[h!]
+\centering \includegraphics[scale=0.41]{machines.eps}
+\caption{Ratio vs. machines}
+\end{figure}
+
+\begin{figure}[h!]
+\centering \includegraphics[scale=0.41]{machines_noaa.eps}
+\caption{Ratio vs. machines, excluding approximation results}
+\end{figure}
+
+We see a kind of logarithmic growth in metric for the approximation algorithm that agrees with the ratio we computed earlier. Along both dimensions, it seems that our cycling heuristic slightly outperforms random and zigzag on average no matter the number of machines or jobs, but surprisingly, random does worse than zigzag, despite zigzag being a kind of opposite to the heuristic. We were also shocked to see that there were many instances in which the cyclic heuristic was not optimal; one example is above in the zigzag heuristic section.
+
+Another interesting thing is the relative stability of the metric for our 3 heuristics. Across all trees, no approximation ratio exceeds 4.5, and the graphs don't immediately suggest that increasing the number of jobs, machines, or height (not pictured) would steadily increase the ratio. Finding some way to bound the approximation ratio, or else finding a family of counterexamples, would be good next steps.
 
 \renewcommand{\bibpreamble}{Our most used source was \cite{kumar} which gave us the tool of chain decompositions as a way to approximate schedules for trees and forests, and together with \cite{shmoys} helped us derive and discuss the relevant lower bounds. Additionally \cite{hu} presents the classic forest scheduling algorithms which served as a basis for our heuristics. The remaining papers are energy aware scheduling papers given on the syllabus, referred to only to help motivate the relevance and novelty of our problem definition. Throughout we use tools learned in class without citation.}
-
+\break
 \begin{thebibliography}{9}
 \bibitem{kumar}
 V. Kumar, M. Marathe, S. Parthasarathy, and A. Srinivasan. 
