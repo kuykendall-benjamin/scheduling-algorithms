@@ -15,24 +15,26 @@ try:
     name = sys.argv[1]
 except:
     pass
-trees = conllu_tree('en-ud-train.conllu')
 with open(name, "w") as f:
     f.write("[\n");
     first = True
-    for i, tree in enumerate(trees):
-        if i%10 == 0:
-            print("iteration %d/%d" % (i, len(trees)))
+    for m in range(2, 20):
+        trees = conllu_tree('en-ud-train.conllu')
+        for i, tree in enumerate(trees):
+            if i%10 == 0:
+                print("iteration %d/%d with %d mach" % (i, len(trees), m))
+            if i > 200:
+                break
 
-        if not first:
-            f.write(",\n")
-        first = False
-        height = tree.length()
-        s = tree.__str__()
-        J, res = schedule(3, tree, zz=True)
-        parsed = parse_schedule(J, res)
-        parsed['tree'] = s
-        parsed['height'] = height
-        # del parsed['data']
-        # del parsed['tree']
-        f.write(json.dumps(parsed, indent=2, sort_keys=True))
+            if not first:
+                f.write(",\n")
+            first = False
+            height = tree.length()
+            s = tree.__str__()
+            J, res = schedule(m, tree, rand=True)
+            parsed = parse_schedule(J, res)
+            # parsed['tree'] = s
+            parsed['height'] = height
+            del parsed['data']
+            f.write(json.dumps(parsed, indent=2, sort_keys=True))
     f.write("\n]");

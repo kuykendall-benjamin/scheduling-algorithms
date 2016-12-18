@@ -6,7 +6,7 @@ import sys
 def tikz(parsed, fn, scale=10, m=False):
     energy, nmach, data = (parsed['energy'], parsed['machines'], parsed['data'])
     with open(fn, 'w') as f:
-        f.write("Energy: %d\n" % energy)
+        # f.write("Energy: %d\n" % energy)
         f.write("\\begin{tikzpicture}\n")
         offset = 0
         if m:
